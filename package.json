@@ -1,0 +1,34 @@
+{
+  "name": "merge-docs",
+  "version": "1.0.0",
+  "description": "Interactively merge CouchDB documents in order to normalize duplicated data",
+  "main": "lib/index.js",
+  "bin": "bin/main.js",
+  "scripts": {
+    "test": "tape-dots test/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eHealthAfrica/merge-docs.git"
+  },
+  "keywords": [
+    "data",
+    "maintenance",
+    "migration",
+    "couchdb",
+    "pouchdb",
+    "merge",
+    "docs",
+    "cli"
+  ],
+  "author": "Tibor Claassen <tibor@gmah.net> (http://codebeige.net)",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/eHealthAfrica/merge-docs/issues"
+  },
+  "homepage": "https://github.com/eHealthAfrica/merge-docs#readme",
+  "devDependencies": {
+    "tape": "^4.0.0",
+    "tape-dots": "^1.0.0"
+  }
+}
