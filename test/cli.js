@@ -2,9 +2,13 @@
 var test       = require('redtape')(beforeEach)
   , sinon      = require('sinon')
   , proxyquire = require('proxyquire')
+  , events     = require('events')
+  , _          = require('lodash')
 
 function fakeStream () {
-  return { pipe: sinon.stub().returnsArg(0) }
+  return _.assign( new events.EventEmitter()
+                 , { pipe : sinon.stub().returnsArg(0) }
+                 )
 }
 
 function fakeIo () {
@@ -41,6 +45,17 @@ test('parses rows from stdin', function (t) {
   t.end()
 })
 
+test('handles parse errors', function (t) {
+  var parser = fakeStream()
+    , error  = new Error('Could not parse JSON')
+  JSONStream.parse.returns(parser)
+  cli(io).run().catch(function (catched) {
+    t.equal(catched, error)
+    t.end()
+  })
+  parser.emit('error', error)
+})
+
 test('chunks rows by key', function (t) {
   var parser = fakeStream()
     , chunks = fakeStream()
@@ -49,4 +64,15 @@ test('chunks rows by key', function (t) {
   cli(io).run()
   t.ok(parser.pipe.calledWith(chunks))
   t.end()
+})
+
+test('handles chunk errors', function (t) {
+  var chunks = fakeStream()
+    , error  = new Error('Could not parse JSON')
+  chunkStream.returns(chunks)
+  cli(io).run().catch(function (catched) {
+    t.equal(catched, error)
+    t.end()
+  })
+  chunks.emit('error', error)
 })
