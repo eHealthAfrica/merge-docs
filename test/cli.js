@@ -20,19 +20,21 @@ function fakeJSONStream () {
   return { parse: sinon.stub().returns(stream) }
 }
 
-function fakeChunkStream () {
+function fakeStreamFactory () {
   var stream = fakeStream()
   return sinon.stub().returns(stream)
 }
 
-var cli, io, JSONStream, chunkStream
+var cli, io, JSONStream, chunkStream, mergeStream
 
 function beforeEach (done) {
   io          = fakeIo()
   JSONStream  = fakeJSONStream()
-  chunkStream = fakeChunkStream()
+  chunkStream = fakeStreamFactory()
+  mergeStream = fakeStreamFactory()
   cli         = proxyquire('../lib/cli', { 'JSONStream'     : JSONStream
                                          , './chunk-stream' : chunkStream
+                                         , './merge-stream'  : mergeStream
                                          })
   done()
 }
@@ -68,11 +70,32 @@ test('chunks rows by key', function (t) {
 
 test('handles chunk errors', function (t) {
   var chunks = fakeStream()
-    , error  = new Error('Could not parse JSON')
+    , error  = new Error('Chunking failed for some reason')
   chunkStream.returns(chunks)
   cli(io).run().catch(function (catched) {
     t.equal(catched, error)
     t.end()
   })
   chunks.emit('error', error)
+})
+
+test('creates merged doc from chunks', function (t) {
+  var chunks = fakeStream()
+    , merges = fakeStream()
+  chunkStream.returns(chunks)
+  mergeStream.returns(merges)
+  cli(io).run()
+  t.ok(chunks.pipe.calledWith(merges))
+  t.end()
+})
+
+test('handles merge errors', function (t) {
+  var merges = fakeStream()
+    , error  = new Error('Could not merge here!')
+  mergeStream.returns(merges)
+  cli(io).run().catch(function (catched) {
+    t.equal(catched, error)
+    t.end()
+  })
+  merges.emit('error', error)
 })
