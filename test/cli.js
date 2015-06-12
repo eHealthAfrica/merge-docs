@@ -25,17 +25,19 @@ function fakeStreamFactory () {
   return sinon.stub().returns(stream)
 }
 
-var cli, io, JSONStream, chunkStream, mapStream, merge
+var cli, io, JSONStream, chunkStream, mapStream, sort, merge
 
 function beforeEach (done) {
   io          = fakeIo()
   JSONStream  = fakeJSONStream()
   chunkStream = fakeStreamFactory()
   mapStream   = fakeStreamFactory()
+  sort        = sinon.stub().returnsArg(0)
   merge       = sinon.stub().returnsArg(0)
   cli         = proxyquire('../lib/cli', { 'JSONStream'     : JSONStream
                                          , './chunk-stream' : chunkStream
                                          , './map-stream'   : mapStream
+                                         , './sort'         : sort
                                          , './merge'        : merge
                                          })
   done()
@@ -61,43 +63,64 @@ test('handles parse errors', function (t) {
 })
 
 test('chunks rows by key', function (t) {
-  var parser = fakeStream()
-    , chunks = fakeStream()
+  var parser  = fakeStream()
+    , chunker = fakeStream()
   JSONStream.parse.returns(parser)
-  chunkStream.withArgs({groupBy: 'key'}).returns(chunks)
+  chunkStream.withArgs({groupBy: 'key'}).returns(chunker)
   cli(io).run()
-  t.ok(parser.pipe.calledWith(chunks))
+  t.ok(parser.pipe.calledWith(chunker))
   t.end()
 })
 
 test('handles chunk errors', function (t) {
-  var chunks = fakeStream()
-    , error  = new Error('Chunking failed for some reason')
-  chunkStream.returns(chunks)
+  var chunker = fakeStream()
+    , error   = new Error('Chunking failed for some reason')
+  chunkStream.returns(chunker)
   cli(io).run().catch(function (catched) {
     t.equal(catched, error)
     t.end()
   })
-  chunks.emit('error', error)
+  chunker.emit('error', error)
 })
 
-test('creates merged doc from chunks', function (t) {
-  var chunks = fakeStream()
-    , merges = fakeStream()
-  chunkStream.returns(chunks)
-  mapStream.withArgs(merge).returns(merges)
+test('sorts chunks', function (t) {
+  var chunker = fakeStream()
+    , sorter  = fakeStream()
+  chunkStream.returns(chunker)
+  mapStream.withArgs(sort).returns(sorter)
   cli(io).run()
-  t.ok(chunks.pipe.calledWith(merges))
+  t.ok(chunker.pipe.calledWith(sorter))
+  t.end()
+})
+
+test('handles sort errors', function (t) {
+  var sorter = fakeStream()
+    , error  = new Error('No idea how to sort this thing')
+  mapStream.withArgs(sort).returns(sorter)
+  cli(io).run().catch(function (catched) {
+    t.equal(catched, error)
+    t.end()
+  })
+  sorter.emit('error', error)
+})
+
+test('merges sorted chunks', function (t) {
+  var sorter = fakeStream()
+    , merger = fakeStream()
+  mapStream.withArgs(sort).returns(sorter)
+  mapStream.withArgs(merge).returns(merger)
+  cli(io).run()
+  t.ok(sorter.pipe.calledWith(merger))
   t.end()
 })
 
 test('handles merge errors', function (t) {
-  var merges = fakeStream()
+  var merger = fakeStream()
     , error  = new Error('Could not merge here!')
-  mapStream.withArgs(merge).returns(merges)
+  mapStream.withArgs(merge).returns(merger)
   cli(io).run().catch(function (catched) {
     t.equal(catched, error)
     t.end()
   })
-  merges.emit('error', error)
+  merger.emit('error', error)
 })

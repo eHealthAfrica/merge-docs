@@ -1,0 +1,14 @@
+'use strict'
+var test = require('redtape')()
+
+var sort = require('../lib/sort')
+
+test('sorts docs by date of last modification', function (t) {
+  var docs = [ { createdDate: '2015-01-01T00:00:00.000Z', foo: 1 }
+             , { createdDate: '2015-03-01T00:00:00.000Z', foo: 2 }
+             , { createdDate: '2015-02-01T00:00:00.000Z', foo: 3 }
+             ]
+  var output = merge(docs)
+  t.equal(output.foo, 2)
+  t.end()
+})
