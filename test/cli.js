@@ -25,16 +25,18 @@ function fakeStreamFactory () {
   return sinon.stub().returns(stream)
 }
 
-var cli, io, JSONStream, chunkStream, mergeStream
+var cli, io, JSONStream, chunkStream, mapStream, merge
 
 function beforeEach (done) {
   io          = fakeIo()
   JSONStream  = fakeJSONStream()
   chunkStream = fakeStreamFactory()
-  mergeStream = fakeStreamFactory()
+  mapStream   = fakeStreamFactory()
+  merge       = sinon.stub().returnsArg(0)
   cli         = proxyquire('../lib/cli', { 'JSONStream'     : JSONStream
                                          , './chunk-stream' : chunkStream
-                                         , './merge-stream'  : mergeStream
+                                         , './map-stream'   : mapStream
+                                         , './merge'        : merge
                                          })
   done()
 }
@@ -83,7 +85,7 @@ test('creates merged doc from chunks', function (t) {
   var chunks = fakeStream()
     , merges = fakeStream()
   chunkStream.returns(chunks)
-  mergeStream.returns(merges)
+  mapStream.withArgs(merge).returns(merges)
   cli(io).run()
   t.ok(chunks.pipe.calledWith(merges))
   t.end()
@@ -92,7 +94,7 @@ test('creates merged doc from chunks', function (t) {
 test('handles merge errors', function (t) {
   var merges = fakeStream()
     , error  = new Error('Could not merge here!')
-  mergeStream.returns(merges)
+  mapStream.withArgs(merge).returns(merges)
   cli(io).run().catch(function (catched) {
     t.equal(catched, error)
     t.end()

@@ -1,39 +1,19 @@
 'use strict'
-var test   = require('redtape')(beforeEach)
-  , stream = require('stream')
-
-function fakeInput(data) {
-  var input = new stream.Readable({objectMode: true})
-  input._read = function () {
-    data.forEach(function (datum) { input.push(datum) })
-    input.push(null)
-  }
-  return input
-}
-
-function fakeOutput () {
-  var output = new stream.Writable({objectMode: true})
-    , data = []
-  Object.defineProperty(output, 'data', {get: function () { return data }})
-  output._write = function (datum, encoding, done) {
-    data.push(datum)
-    done()
-  }
-  return output
-}
+var test = require('redtape')(beforeEach)
+  , fake = require('./support/fake')
 
 var chunkStream = require('../lib/chunk-stream')
   , output = null
 
 function beforeEach(done) {
-  output = fakeOutput()
+  output = fake.output()
   done()
 }
 
 test('emits chunks of matching docs', function (t) {
-  var input  = fakeInput([ {key: 'foo', val: '1'}
-                         , {key: 'foo', val: '2'}
-                         , {key: 'bar', val: '3'}
+  var input = fake.input([ {key: 'foo', val: '1'}
+                          , {key: 'foo', val: '2'}
+                          , {key: 'bar', val: '3'}
                          ])
     , stream = chunkStream({groupBy: 'key'})
 
@@ -49,9 +29,9 @@ test('emits chunks of matching docs', function (t) {
 })
 
 test('groups by key by default', function (t) {
-  var input  = fakeInput([ {key: 'foo', val: '1'}
-                         , {key: 'foo', val: '2'}
-                         , {key: 'bar', val: '3'}
+  var input = fake.input([ {key: 'foo', val: '1'}
+                          , {key: 'foo', val: '2'}
+                          , {key: 'bar', val: '3'}
                          ])
     , stream = chunkStream()
 
@@ -67,7 +47,7 @@ test('groups by key by default', function (t) {
 })
 
 test('groups null values', function (t) {
-  var input  = fakeInput([ {key: null, val: '1'} ])
+  var input  = fake.input([ {key: null, val: '1'} ])
     , stream = chunkStream({groupBy: 'key'})
 
   input.pipe(stream).pipe(output)
@@ -79,7 +59,7 @@ test('groups null values', function (t) {
 })
 
 test('skips chunks that fall below minimum length', function (t) {
-  var input  = fakeInput([ {key: 'foo', val: '1'}
+  var input = fake.input([ {key: 'foo', val: '1'}
                          , {key: 'foo', val: '2'}
                          , {key: 'bar', val: '3'}
                          ])
@@ -96,7 +76,7 @@ test('skips chunks that fall below minimum length', function (t) {
 })
 
 test('does not emit empty chunk', function (t) {
-  var input  = fakeInput([])
+  var input  = fake.input([])
     , stream = chunkStream({groupBy: 'key'})
 
   input.pipe(stream).pipe(output)
