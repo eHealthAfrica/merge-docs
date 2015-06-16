@@ -36,6 +36,7 @@
   },
   "dependencies": {
     "JSONStream": "^1.0.4",
+    "deep-diff": "^0.3.2",
     "lodash": "^3.9.3"
   }
 }

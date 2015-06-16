@@ -25,7 +25,7 @@ function fakeStreamFactory () {
   return sinon.stub().returns(stream)
 }
 
-var cli, io, JSONStream, chunkStream, mapStream, sort, merge
+var cli, io, JSONStream, chunkStream, mapStream, sort, merge, diff
 
 function beforeEach (done) {
   io          = fakeIo()
@@ -34,11 +34,13 @@ function beforeEach (done) {
   mapStream   = fakeStreamFactory()
   sort        = sinon.stub().returnsArg(0)
   merge       = sinon.stub().returnsArg(0)
+  diff        = sinon.stub().returnsArg(0)
   cli         = proxyquire('../lib/cli', { 'JSONStream'     : JSONStream
                                          , './chunk-stream' : chunkStream
                                          , './map-stream'   : mapStream
                                          , './sort'         : sort
                                          , './merge'        : merge
+                                         , './diff'         : diff
                                          })
   done()
 }
@@ -123,4 +125,25 @@ test('handles merge errors', function (t) {
     t.end()
   })
   merger.emit('error', error)
+})
+
+test('diffs merged doc and sources', function (t) {
+  var merger = fakeStream()
+    , differ = fakeStream()
+  mapStream.withArgs(merge).returns(merger)
+  mapStream.withArgs(diff).returns(differ)
+  cli(io).run()
+  t.ok(merger.pipe.calledWith(differ))
+  t.end()
+})
+
+test('handles diff errors', function (t) {
+  var differ = fakeStream()
+    , error  = new Error('Say it again, please')
+  mapStream.withArgs(diff).returns(differ)
+  cli(io).run().catch(function (catched) {
+    t.equal(catched, error)
+    t.end()
+  })
+  differ.emit('error', error)
 })
