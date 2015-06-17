@@ -78,3 +78,17 @@ test('forwards error from rejected promise', function (t) {
     t.end()
   })
 })
+
+test('forwards options to each call', function (t) {
+  var input     = fake.input([ { foo: 'bar' } ])
+    , transform = sinon.stub().returns({ foo: 'BAZ' })
+    , options   = { out: function () {} }
+    , stream    = mapStream(transform, options)
+
+  input.pipe(stream).pipe(output)
+
+  output.on('finish', function () {
+    t.ok(transform.calledWith({ foo: 'bar' }, options))
+    t.end()
+  })
+})
