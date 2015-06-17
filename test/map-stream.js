@@ -49,3 +49,32 @@ test('does not push null values', function (t) {
     t.end()
   })
 })
+
+test('pushes value from a promise', function (t) {
+  var input = fake.input([ { foo: 'bar' } ])
+    , promise = Promise.resolve({foo: 'BAZ'})
+    , transform = function () { return promise }
+    , stream = mapStream(transform)
+
+  input.pipe(stream).pipe(output)
+
+  output.on('finish', function () {
+    t.deepEqual(output.data, [ { foo: 'BAZ' } ])
+    t.end()
+  })
+})
+
+test('forwards error from rejected promise', function (t) {
+  var input = fake.input([ { foo: 'bar' } ])
+    , error = new Error('WAT?')
+    , promise = Promise.reject(error)
+    , transform = function () { return promise }
+    , stream = mapStream(transform)
+
+  input.pipe(stream).pipe(output)
+
+  stream.on('error', function (e) {
+    t.deepEqual(e, error)
+    t.end()
+  })
+})
