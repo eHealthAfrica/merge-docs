@@ -16,12 +16,12 @@ function fakeInput() {
          }
 }
 
-var choose, io, tables
+var choose, io, table
 
 function beforeEach(done) {
   io = fakeIo()
-  tables = sinon.stub().returns('| H1 | H2 |')
-  choose = proxyquire('../lib/choose', { './tables': tables })
+  table = sinon.stub().returns('| H1 | H2 |')
+  choose = proxyquire('../lib/choose', { './table': table })
   done()
 }
 
@@ -34,7 +34,7 @@ test('returns a promise', function (t) {
 
 test('renders diff tables to stdout', function (t) {
   var input = fakeInput()
-  tables.withArgs(input).returns('| DIFF | TABLE |')
+  table.withArgs(input.diffs).returns('| DIFF | TABLE |')
   var result = choose(input, io)
   t.ok(io.stdout.write.calledWith('| DIFF | TABLE |'))
   t.end()
