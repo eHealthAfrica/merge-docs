@@ -31,6 +31,17 @@ From the project root run:
 npm test
 ```
 
+TODO
+----
+
+- selectively apply merge
+- update db
+- replace ids
+- collapse inline docs
+- show full docs
+- aggregate lists
+- end-to-end testing
+- pass view as argument
 
 ---
 Apache License 2.0
