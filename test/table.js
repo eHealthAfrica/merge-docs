@@ -30,6 +30,19 @@ test('creates headers', function (t) {
   t.end()
 })
 
+test('returns rendered table', function (t) {
+  renderer.toString.returns('| 1 | 2 | 3 |')
+  var output = table([[], [], []])
+  t.equal(output, '| 1 | 2 | 3 |')
+  t.end()
+})
+
+test('fills table before rendering', function (t) {
+  table([ [] ])
+  t.ok(renderer.toString.calledAfter(renderer.push))
+  t.end()
+})
+
 test('it creates one row for each path', function (t) {
   table([ [ { path: ['foo'] }, { path: ['bar'] } ] ])
   t.equal(renderer.push.firstCall.args.length, 2)
@@ -50,28 +63,61 @@ test('creates label from path', function (t) {
 
 test('collects merged value in first column', function (t) {
   table([ [ { path: ['foo'], lhs: 'baz', rhs: 'bar' } ] ])
-  var column = renderer.push.firstCall.args[0].foo
-  t.equal(column[0], 'bar')
+  var row = renderer.push.firstCall.args[0].foo
+  t.equal(row[0], 'bar')
   t.end()
 })
 
 test('collects source values in remaining columns', function (t) {
   table([ [ { path: ['foo'], lhs: 'baz', rhs: 'bar' } ] ])
-  var column = renderer.push.firstCall.args[0].foo
-  t.equal(column[1], 'baz')
+  var row = renderer.push.firstCall.args[0].foo
+  t.equal(row[1], 'baz')
   t.end()
 })
 
 test('inserts merged value for empty column', function (t) {
   table([ [], [ { path: ['foo'], lhs: 'baz', rhs: 'bar' } ] ])
-  var column = renderer.push.firstCall.args[0].foo
-  t.equal(column[1], 'bar')
+  var row = renderer.push.firstCall.args[0].foo
+  t.equal(row[1], 'bar')
   t.end()
 })
 
-test('returns rendered table', function (t) {
-  renderer.toString.returns('| 1 | 2 | 3 |')
-  var output = table([[], [], []])
-  t.equal(output, '| 1 | 2 | 3 |')
+test('it expands paths for new nested property', function (t) {
+  table([ [ { path: ['foo'], lhs: { bar: { baz: ['a', 'b'] } } } ] ])
+  t.ok(renderer.push.calledWith(sinon.match.has('foo/bar/baz/0')))
+  t.end()
+})
+
+test('collects source values for new nested property', function (t) {
+  table([ [ { path: ['foo'], lhs: { bar: { baz: ['a', 'b'] } } } ] ])
+  var row = renderer.push.firstCall.args[0]['foo/bar/baz/0']
+  t.equal(row[1], 'a')
+  t.end()
+})
+
+test('collects merged value for new nested property', function (t) {
+  table([ [ { path: ['foo'], lhs: { bar: { baz: ['a', 'b'] } } } ] ])
+  var row = renderer.push.firstCall.args[0]['foo/bar/baz/0']
+  t.equal(row[0], undefined)
+  t.end()
+})
+
+test('it expands paths for deleted nested property', function (t) {
+  table([ [ { path: ['foo'], rhs: { bar: { baz: ['a', 'b'] } } } ] ])
+  t.ok(renderer.push.calledWith(sinon.match.has('foo/bar/baz/0')))
+  t.end()
+})
+
+test('collects source values for deleted nested property', function (t) {
+  table([ [ { path: ['foo'], rhs: { bar: { baz: ['a', 'b'] } } } ] ])
+  var row = renderer.push.firstCall.args[0]['foo/bar/baz/0']
+  t.equal(row[1], undefined)
+  t.end()
+})
+
+test('collects merged value for deleted nested property', function (t) {
+  table([ [ { path: ['foo'], rhs: { bar: { baz: ['a', 'b'] } } } ] ])
+  var row = renderer.push.firstCall.args[0]['foo/bar/baz/0']
+  t.equal(row[0], 'a')
   t.end()
 })
