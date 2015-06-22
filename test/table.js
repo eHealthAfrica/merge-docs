@@ -121,3 +121,23 @@ test('collects merged value for deleted nested property', function (t) {
   t.equal(row[0], 'a')
   t.end()
 })
+
+test('expands paths for array items', function (t) {
+  table([ [ { path: ['foo'], index: 3 } ] ])
+  t.ok(renderer.push.calledWith(sinon.match.has('foo/3')))
+  t.end()
+})
+
+test('collects merged value from array item', function (t) {
+  table([ [ { path: ['foo'], index: 3, item: { rhs: 'a' } } ] ])
+  var row = renderer.push.firstCall.args[0]['foo/3']
+  t.equal(row[0], 'a')
+  t.end()
+})
+
+test('collects source value from array item', function (t) {
+  table([ [ { path: ['foo'], index: 3, item: { lhs: 'b' } } ] ])
+  var row = renderer.push.firstCall.args[0]['foo/3']
+  t.equal(row[1], 'b')
+  t.end()
+})
