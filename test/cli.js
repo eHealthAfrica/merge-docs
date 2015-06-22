@@ -19,8 +19,11 @@ function fakeIo () {
 }
 
 function fakeJSONStream () {
-  var stream = fakeStream()
-  return { parse: sinon.stub().returns(stream) }
+  var input  = fakeStream()
+    , output = fakeStream()
+  return { parse:     sinon.stub().returns(input)
+         , stringify: sinon.stub().returns(output)
+         }
 }
 
 function fakeStreamFactory () {
@@ -178,5 +181,34 @@ test('passes env to chooser', function (t) {
   cli(io).run()
   t.ok(mapStream.calledWith(choose, { stdout: io.stdout
                                     , prompt: io.prompt}))
+  t.end()
+})
+
+test('serializes merged docs', function (t) {
+  var chooser    = fakeStream()
+    , serializer = fakeStream()
+  mapStream.withArgs(choose).returns(chooser)
+  JSONStream.stringify.returns(serializer)
+  cli(io).run()
+  t.ok(chooser.pipe.calledWith(serializer))
+  t.end()
+})
+
+test('handles serializing errors', function (t) {
+  var serializer = fakeStream()
+    , error      = new Error('Are you serious?')
+  JSONStream.stringify.returns(serializer)
+  cli(io).run().catch(function (catched) {
+    t.equal(catched, error)
+    t.end()
+  })
+  serializer.emit('error', error)
+})
+
+test('pipes serialized output to stdout', function (t) {
+  var serializer = fakeStream()
+  JSONStream.stringify.returns(serializer)
+  cli(io).run()
+  t.ok(serializer.pipe.calledWith(io.stdout))
   t.end()
 })
