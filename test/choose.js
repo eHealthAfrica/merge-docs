@@ -16,26 +16,49 @@ function fakeInput() {
          }
 }
 
-var choose, io, table
+var choose, input, io, table
 
 function beforeEach(done) {
   io = fakeIo()
+  input = fakeInput()
   table = sinon.stub().returns('| H1 | H2 |')
   choose = proxyquire('../lib/choose', { './table': table })
   done()
 }
 
 test('returns a promise', function (t) {
-  var input = fakeInput()
   var result = choose(input, io)
   t.ok(result instanceof Promise)
   t.end()
 })
 
 test('renders diff tables to stdout', function (t) {
-  var input = fakeInput()
   table.withArgs(input.diffs).returns('| DIFF | TABLE |')
-  var result = choose(input, io)
+  choose(input, io)
   t.ok(io.stdout.write.calledWith('| DIFF | TABLE |'))
   t.end()
+})
+
+test('prompts for confirmation', function (t) {
+  choose(input, io)
+  t.ok(io.prompt.calledWithMatch({ type: 'confirm', name: 'merge' }))
+  t.end()
+})
+
+test('confirm resolves with merged doc', function (t) {
+  var doc = { foo: 'bar' }
+  input.doc = doc
+  io.prompt.callsArgWith(1, {merge: true})
+  choose(input, io).then( function (result) {
+    t.equal(result, doc)
+    t.end()
+  })
+})
+
+test('cancel resolves with null', function (t) {
+  io.prompt.callsArgWith(1, {merge: false})
+  choose(input, io).then( function (result) {
+    t.equal(result, null)
+    t.end()
+  })
 })
