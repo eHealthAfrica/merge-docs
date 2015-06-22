@@ -19,15 +19,6 @@ test('deeply merges properties', function (t) {
   t.end()
 })
 
-test('accumulates list items', function (t) {
-  var docs = [ { foo: [1] }
-             , { foo: [2, 3] }
-             ]
-  var output = merge(docs)
-  t.deepEqual(output.doc, { foo: [1, 2, 3] })
-  t.end()
-})
-
 test('prefers last property on conflicts', function (t) {
   var docs = [ { foo: 'bar' }
              , { foo: 'baz' }

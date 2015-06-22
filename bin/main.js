@@ -1,6 +1,6 @@
 #! /usr/bin/env node
-
-var cli = require('../lib/cli')
+var inquirer = require('inquirer')
+  , cli      = require('../lib/cli')
 
 process.stdin.setEncoding('utf8')
 
@@ -9,6 +9,7 @@ var io =
   , stdout: process.stdout
   , stderr: process.stderr
   , argv:   process.argv
+  , prompt: inquirer.prompt
   }
 
 cli(io)
