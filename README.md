@@ -16,10 +16,11 @@ npm install -g merge-docs
 Usage
 -----
 
-You can pipe a JSON response from a CouchDB view straight into the script:
+Point the script to a CouchDB view that generates identical keys for docs that
+should be merged:
 
 ```sh
-curl http://localhost:5984/db/_design/merge/_view/normalized-name > merge-docs
+merge-docs http://localhost:5984/db/_design/merge/_view/normalized-name
 ```
 
 Running the Tests
@@ -34,14 +35,12 @@ npm test
 TODO
 ----
 
-- selectively apply merge
 - update db
 - replace ids
-- collapse inline docs
+- selectively apply merge
 - show full docs
-- aggregate lists
+- collapse at given depth
 - end-to-end testing
-- pass view as argument
 
 ---
 Apache License 2.0
