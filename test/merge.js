@@ -3,16 +3,20 @@ var test = require('redtape')()
 
 var merge = require('../lib/merge')
 
+function fakeDoc(props) {
+  return { doc: props }
+}
+
 test('merges input into a single doc', function (t) {
-  var docs = [ { foo: 'a' }, { bar: 'b' } ]
+  var docs = [ fakeDoc({ foo: 'a' }), fakeDoc({ bar: 'b' }) ]
   var output = merge(docs)
   t.deepEqual(output.doc, { foo: 'a', bar: 'b' })
   t.end()
 })
 
 test('deeply merges properties', function (t) {
-  var docs = [ { foo: { a: 1 } }
-             , { foo: { b: 2 } }
+  var docs = [ fakeDoc({ foo: { a: 1 } })
+             , fakeDoc({ foo: { b: 2 } })
              ]
   var output = merge(docs)
   t.deepEqual(output.doc, { foo: { a: 1, b: 2 } })
@@ -20,8 +24,8 @@ test('deeply merges properties', function (t) {
 })
 
 test('prefers last property on conflicts', function (t) {
-  var docs = [ { foo: 'bar' }
-             , { foo: 'baz' }
+  var docs = [ fakeDoc({ foo: 'bar' })
+             , fakeDoc({ foo: 'baz' })
              ]
   var output = merge(docs)
   t.deepEqual(output.doc, { foo: 'baz' })
@@ -29,8 +33,8 @@ test('prefers last property on conflicts', function (t) {
 })
 
 test('passes along source docs', function (t) {
-  var docs = [ { foo: 'bar' }
-             , { foo: 'baz' }
+  var docs = [ fakeDoc({ foo: 'bar' })
+             , fakeDoc({ foo: 'baz' })
              ]
   var output = merge(docs)
   t.deepEqual(output.sources, [ { foo: 'bar' }, { foo: 'baz' } ])

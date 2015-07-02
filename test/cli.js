@@ -12,17 +12,16 @@ function fakeStream () {
 }
 
 function fakeIo () {
-  return { stdin  : fakeStream()
-         , stdout : fakeStream()
-         , prompt : sinon.spy()
+  return { argv:    ['node', 'merge-docs', 'http://host/db/_design/x/_view/y']
+         , stdout:  fakeStream()
+         , request: fakeStreamFactory()
+         , prompt:  sinon.spy()
          }
 }
 
 function fakeJSONStream () {
-  var input  = fakeStream()
-    , output = fakeStream()
-  return { parse:     sinon.stub().returns(input)
-         , stringify: sinon.stub().returns(output)
+  return { parse:     fakeStreamFactory()
+         , stringify: fakeStreamFactory()
          }
 }
 
@@ -53,11 +52,29 @@ function beforeEach (done) {
   done()
 }
 
-test('parses rows from stdin', function (t) {
-  var parser = fakeStream()
+test('aborts when no view is given', function (t) {
+  io.argv[2] = null
+  cli(io).run().catch(function (error) {
+    t.ok(error)
+    t.end()
+  })
+})
+
+test('fetches rows from view', function (t) {
+  io.argv[2] = 'http://host/db/_design/md/_view/name'
+  cli(io).run()
+  t.ok(io.request.calledWith(
+      'http://host/db/_design/md/_view/name?include_docs=true'))
+  t.end()
+})
+
+test('parses rows from request', function (t) {
+  var request = fakeStream()
+    , parser  = fakeStream()
+  io.request.returns(request)
   JSONStream.parse.withArgs('rows.*').returns(parser)
   cli(io).run()
-  t.ok(io.stdin.pipe.calledWith(parser))
+  t.ok(request.pipe.calledWith(parser))
   t.end()
 })
 
@@ -76,7 +93,7 @@ test('chunks rows by key', function (t) {
   var parser  = fakeStream()
     , chunker = fakeStream()
   JSONStream.parse.returns(parser)
-  chunkStream.withArgs({groupBy: 'key'}).returns(chunker)
+  chunkStream.withArgs({groupBy: 'key', minLength: 2}).returns(chunker)
   cli(io).run()
   t.ok(parser.pipe.calledWith(chunker))
   t.end()

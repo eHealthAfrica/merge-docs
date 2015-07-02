@@ -33,7 +33,7 @@ test('creates headers', function (t) {
 test('returns rendered table', function (t) {
   renderer.toString.returns('| 1 | 2 | 3 |')
   var output = table([[], [], []])
-  t.equal(output, '| 1 | 2 | 3 |')
+  t.equal(output, '| 1 | 2 | 3 |\n')
   t.end()
 })
 
@@ -68,10 +68,38 @@ test('collects merged value in first column', function (t) {
   t.end()
 })
 
+test('converts merged value to be a string', function (t) {
+  table([ [ { path: ['foo'], lhs: 'baz', rhs: 1234} ] ])
+  var row = renderer.push.firstCall.args[0].foo
+  t.equal(row[0], '1234')
+  t.end()
+})
+
+test('converts merged value to empty string for null value', function (t) {
+  table([ [ { path: ['foo'], lhs: 'baz', rhs: null} ] ])
+  var row = renderer.push.firstCall.args[0].foo
+  t.equal(row[0], '')
+  t.end()
+})
+
 test('collects source values in remaining columns', function (t) {
   table([ [ { path: ['foo'], lhs: 'baz', rhs: 'bar' } ] ])
   var row = renderer.push.firstCall.args[0].foo
   t.equal(row[1], 'baz')
+  t.end()
+})
+
+test('converts source values to be a string', function (t) {
+  table([ [ { path: ['foo'], lhs: 42, rhs: 'bar' } ] ])
+  var row = renderer.push.firstCall.args[0].foo
+  t.equal(row[1], '42')
+  t.end()
+})
+
+test('converts source values to empty string for null values', function (t) {
+  table([ [ { path: ['foo'], lhs: null, rhs: 'bar' } ] ])
+  var row = renderer.push.firstCall.args[0].foo
+  t.equal(row[1], '')
   t.end()
 })
 
@@ -98,7 +126,7 @@ test('collects source values for new nested property', function (t) {
 test('collects merged value for new nested property', function (t) {
   table([ [ { path: ['foo'], lhs: { bar: { baz: ['a', 'b'] } } } ] ])
   var row = renderer.push.firstCall.args[0]['foo/bar/baz/0']
-  t.equal(row[0], undefined)
+  t.equal(row[0], '')
   t.end()
 })
 
@@ -111,7 +139,7 @@ test('it expands paths for deleted nested property', function (t) {
 test('collects source values for deleted nested property', function (t) {
   table([ [ { path: ['foo'], rhs: { bar: { baz: ['a', 'b'] } } } ] ])
   var row = renderer.push.firstCall.args[0]['foo/bar/baz/0']
-  t.equal(row[1], undefined)
+  t.equal(row[1], '')
   t.end()
 })
 

@@ -39,6 +39,7 @@
     "cli-table": "^0.3.1",
     "deep-diff": "^0.3.2",
     "inquirer": "^0.8.5",
-    "lodash": "^3.9.3"
+    "lodash": "^3.9.3",
+    "request": "^2.58.0"
   }
 }
