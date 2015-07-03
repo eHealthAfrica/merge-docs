@@ -18,7 +18,7 @@ Usage
 You can pipe a JSON response from a CouchDB view straight into the script:
 
 ```sh
-curl http://localhost:5984/db/_design/merge/_view/normalized-name?include_docs=true > merge-docs
+curl http://localhost:5984/db/_design/merge/_view/normalized-name?include_docs=true | ./bin/main.js | python -m json.tool | less
 ```
 
 Running the Tests

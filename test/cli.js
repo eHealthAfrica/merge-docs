@@ -14,13 +14,16 @@ function fakeStream () {
 function fakeIo () {
   return { stdin  : fakeStream()
          , stdout : fakeStream()
-         , prompt : sinon.spy()
          }
 }
 
 function fakeJSONStream () {
-  var stream = fakeStream()
-  return { parse: sinon.stub().returns(stream) }
+  var parser = fakeStream()
+    , stringifier = fakeStream()
+
+  return { parse:     sinon.stub().returns(parser)
+         , stringify: sinon.stub().returns(stringifier)
+         }
 }
 
 function fakeStreamFactory () {
@@ -126,4 +129,33 @@ test('handles merge errors', function (t) {
     t.end()
   })
   merger.emit('error', error)
+})
+
+test('serializes merged docs', function (t) {
+  var merger     = fakeStream()
+    , serializer = fakeStream()
+  mapStream.withArgs(merge).returns(merger)
+  JSONStream.stringify.returns(serializer)
+  cli(io).run()
+  t.ok(merger.pipe.calledWith(serializer))
+  t.end()
+})
+
+test('handles serializer errors', function (t) {
+  var serializer = fakeStream()
+    , error      = new Error('Bad input data')
+  JSONStream.stringify.returns(serializer)
+  cli(io).run().catch(function (catched) {
+    t.equal(catched, error)
+    t.end()
+  })
+  serializer.emit('error', error)
+})
+
+test('streams serialized data to stdout', function (t) {
+  var serializer = fakeStream()
+  JSONStream.stringify.returns(serializer)
+  cli(io).run()
+  t.ok(serializer.pipe.calledWith(io.stdout))
+  t.end()
 })
