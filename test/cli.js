@@ -73,7 +73,7 @@ test('chunks rows by key', function (t) {
   var parser  = fakeStream()
     , chunker = fakeStream()
   JSONStream.parse.returns(parser)
-  chunkStream.withArgs({groupBy: 'key'}).returns(chunker)
+  chunkStream.withArgs({groupBy: 'key', minLength: 2}).returns(chunker)
   cli(io).run()
   t.ok(parser.pipe.calledWith(chunker))
   t.end()
