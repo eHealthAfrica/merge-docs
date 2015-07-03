@@ -1,10 +1,23 @@
 'use strict'
-var test = require('redtape')()
+var test       = require('redtape')(beforeEach)
+  , sinon      = require('sinon')
+  , proxyquire = require('proxyquire')
+  , _          = require('lodash')
 
-var merge = require('../lib/merge')
+var merge, uuid
 
-function fakeDoc(attrs) {
-  return { doc: attrs }
+function beforeEach(done) {
+  uuid = sinon.stub().returns('xxx')
+  merge = proxyquire('../lib/merge', { 'uuid': { v4: uuid }})
+  done()
+}
+
+function fakeDoc(props) {
+  return { doc: props }
+}
+
+function doc(merged) {
+  return _.omit(merged.doc, '_id')
 }
 
 test('merges input into a single doc', function (t) {
@@ -12,7 +25,7 @@ test('merges input into a single doc', function (t) {
              , fakeDoc({ bar: 'b' })
              ]
   var output = merge(docs)
-  t.deepEqual(output.doc, { foo: 'a', bar: 'b' })
+  t.deepEqual(doc(output), { foo: 'a', bar: 'b' })
   t.end()
 })
 
@@ -21,7 +34,7 @@ test('deeply merges properties', function (t) {
              , fakeDoc({ foo: { b: 2 } })
              ]
   var output = merge(docs)
-  t.deepEqual(output.doc, { foo: { a: 1, b: 2 } })
+  t.deepEqual(doc(output), { foo: { a: 1, b: 2 } })
   t.end()
 })
 
@@ -30,7 +43,7 @@ test('prefers last property on conflicts', function (t) {
              , fakeDoc({ foo: 'baz' })
              ]
   var output = merge(docs)
-  t.deepEqual(output.doc, { foo: 'baz' })
+  t.deepEqual(doc(output), { foo: 'baz' })
   t.end()
 })
 
@@ -40,5 +53,15 @@ test('passes along source docs', function (t) {
              ]
   var output = merge(docs)
   t.deepEqual(output.sources, [ { foo: 'bar' }, { foo: 'baz' } ])
+  t.end()
+})
+
+test('creates new id', function (t) {
+  var docs = [ fakeDoc({ _id: '675cb524-d599' })
+             , fakeDoc({ _id: 'be13804d-3b8b' })
+             ]
+  uuid.returns('c7900469-7ede')
+  var output = merge(docs)
+  t.deepEqual(output.doc._id, 'c7900469-7ede')
   t.end()
 })
