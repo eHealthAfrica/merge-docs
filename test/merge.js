@@ -95,3 +95,12 @@ test('tracks meta data', function (t) {
     t.end()
   }
 })
+
+test('passes along original ids', function (t) {
+  var docs = [ fakeDoc({ _id: '675cb524-d599' })
+             , fakeDoc({ _id: 'be13804d-3b8b' })
+             ]
+  var output = merge(docs)
+  t.deepEqual(output.ids, ['675cb524-d599', 'be13804d-3b8b'])
+  t.end()
+})
