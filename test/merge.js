@@ -104,3 +104,21 @@ test('passes along original ids', function (t) {
   t.deepEqual(output.ids, ['675cb524-d599', 'be13804d-3b8b'])
   t.end()
 })
+
+test('always append values inside lists', function (t) {
+  var docs = [ fakeDoc({ tags: ['foo', 'bar'] })
+             , fakeDoc({ tags: ['baz'] })
+             ]
+  var output = merge(docs)
+  t.deepEqual(props(output).tags, ['foo', 'bar', 'baz'])
+  t.end()
+})
+
+test('does not append null list', function (t) {
+  var docs = [ fakeDoc({ tags: ['foo', 'bar'] })
+             , fakeDoc({ tags: null })
+             ]
+  var output = merge(docs)
+  t.deepEqual(props(output).tags, ['foo', 'bar'])
+  t.end()
+})
