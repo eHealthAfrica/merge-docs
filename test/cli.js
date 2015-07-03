@@ -28,7 +28,7 @@ function fakeStreamFactory () {
   return sinon.stub().returns(stream)
 }
 
-var cli, io, JSONStream, chunkStream, mapStream, sort, merge, diff, choose
+var cli, io, JSONStream, chunkStream, mapStream, sort, merge
 
 function beforeEach (done) {
   io          = fakeIo()
@@ -37,15 +37,11 @@ function beforeEach (done) {
   mapStream   = fakeStreamFactory()
   sort        = sinon.stub().returnsArg(0)
   merge       = sinon.stub().returnsArg(0)
-  diff        = sinon.stub().returnsArg(0)
-  choose      = sinon.stub().returnsArg(0)
   cli         = proxyquire('../lib/cli', { 'JSONStream'     : JSONStream
                                          , './chunk-stream' : chunkStream
                                          , './map-stream'   : mapStream
                                          , './sort'         : sort
                                          , './merge'        : merge
-                                         , './diff'         : diff
-                                         , './choose'       : choose
                                          })
   done()
 }
@@ -130,53 +126,4 @@ test('handles merge errors', function (t) {
     t.end()
   })
   merger.emit('error', error)
-})
-
-test('diffs merged doc and sources', function (t) {
-  var merger = fakeStream()
-    , differ = fakeStream()
-  mapStream.withArgs(merge).returns(merger)
-  mapStream.withArgs(diff).returns(differ)
-  cli(io).run()
-  t.ok(merger.pipe.calledWith(differ))
-  t.end()
-})
-
-test('handles diff errors', function (t) {
-  var differ = fakeStream()
-    , error  = new Error('Say it again, please')
-  mapStream.withArgs(diff).returns(differ)
-  cli(io).run().catch(function (catched) {
-    t.equal(catched, error)
-    t.end()
-  })
-  differ.emit('error', error)
-})
-
-test('displays dialogs for choosing', function (t) {
-  var differ  = fakeStream()
-    , chooser = fakeStream()
-  mapStream.withArgs(diff).returns(differ)
-  mapStream.withArgs(choose).returns(chooser)
-  cli(io).run()
-  t.ok(differ.pipe.calledWith(chooser))
-  t.end()
-})
-
-test('handles choosing error', function (t) {
-  var chooser = fakeStream()
-    , error   = new Error('What was it again?')
-  mapStream.withArgs(choose).returns(chooser)
-  cli(io).run().catch(function (catched) {
-    t.equal(catched, error)
-    t.end()
-  })
-  chooser.emit('error', error)
-})
-
-test('passes env to chooser', function (t) {
-  cli(io).run()
-  t.ok(mapStream.calledWith(choose, { stdout: io.stdout
-                                    , prompt: io.prompt}))
-  t.end()
 })
