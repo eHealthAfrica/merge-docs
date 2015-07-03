@@ -14,13 +14,16 @@ function fakeStream () {
 function fakeIo () {
   return { stdin  : fakeStream()
          , stdout : fakeStream()
-         , prompt : sinon.spy()
          }
 }
 
 function fakeJSONStream () {
-  var stream = fakeStream()
-  return { parse: sinon.stub().returns(stream) }
+  var parser = fakeStream()
+    , stringifier = fakeStream()
+
+  return { parse:     sinon.stub().returns(parser)
+         , stringify: sinon.stub().returns(stringifier)
+         }
 }
 
 function fakeStreamFactory () {
@@ -28,7 +31,7 @@ function fakeStreamFactory () {
   return sinon.stub().returns(stream)
 }
 
-var cli, io, JSONStream, chunkStream, mapStream, sort, merge, diff, choose
+var cli, io, JSONStream, chunkStream, mapStream, sort, merge
 
 function beforeEach (done) {
   io          = fakeIo()
@@ -37,15 +40,11 @@ function beforeEach (done) {
   mapStream   = fakeStreamFactory()
   sort        = sinon.stub().returnsArg(0)
   merge       = sinon.stub().returnsArg(0)
-  diff        = sinon.stub().returnsArg(0)
-  choose      = sinon.stub().returnsArg(0)
   cli         = proxyquire('../lib/cli', { 'JSONStream'     : JSONStream
                                          , './chunk-stream' : chunkStream
                                          , './map-stream'   : mapStream
                                          , './sort'         : sort
                                          , './merge'        : merge
-                                         , './diff'         : diff
-                                         , './choose'       : choose
                                          })
   done()
 }
@@ -132,51 +131,31 @@ test('handles merge errors', function (t) {
   merger.emit('error', error)
 })
 
-test('diffs merged doc and sources', function (t) {
-  var merger = fakeStream()
-    , differ = fakeStream()
+test('serializes merged docs', function (t) {
+  var merger     = fakeStream()
+    , serializer = fakeStream()
   mapStream.withArgs(merge).returns(merger)
-  mapStream.withArgs(diff).returns(differ)
+  JSONStream.stringify.returns(serializer)
   cli(io).run()
-  t.ok(merger.pipe.calledWith(differ))
+  t.ok(merger.pipe.calledWith(serializer))
   t.end()
 })
 
-test('handles diff errors', function (t) {
-  var differ = fakeStream()
-    , error  = new Error('Say it again, please')
-  mapStream.withArgs(diff).returns(differ)
+test('handles serializer errors', function (t) {
+  var serializer = fakeStream()
+    , error      = new Error('Bad input data')
+  JSONStream.stringify.returns(serializer)
   cli(io).run().catch(function (catched) {
     t.equal(catched, error)
     t.end()
   })
-  differ.emit('error', error)
+  serializer.emit('error', error)
 })
 
-test('displays dialogs for choosing', function (t) {
-  var differ  = fakeStream()
-    , chooser = fakeStream()
-  mapStream.withArgs(diff).returns(differ)
-  mapStream.withArgs(choose).returns(chooser)
+test('streams serialized data to stdout', function (t) {
+  var serializer = fakeStream()
+  JSONStream.stringify.returns(serializer)
   cli(io).run()
-  t.ok(differ.pipe.calledWith(chooser))
-  t.end()
-})
-
-test('handles choosing error', function (t) {
-  var chooser = fakeStream()
-    , error   = new Error('What was it again?')
-  mapStream.withArgs(choose).returns(chooser)
-  cli(io).run().catch(function (catched) {
-    t.equal(catched, error)
-    t.end()
-  })
-  chooser.emit('error', error)
-})
-
-test('passes env to chooser', function (t) {
-  cli(io).run()
-  t.ok(mapStream.calledWith(choose, { stdout: io.stdout
-                                    , prompt: io.prompt}))
+  t.ok(serializer.pipe.calledWith(io.stdout))
   t.end()
 })
