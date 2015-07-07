@@ -1,7 +1,7 @@
 {
   "name": "merge-docs",
   "version": "1.0.0",
-  "description": "Interactively merge CouchDB documents in order to normalize duplicated data",
+  "description": "Create merged doc from multiple sources",
   "main": "lib/index.js",
   "bin": "bin/main.js",
   "scripts": {
