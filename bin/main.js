@@ -2,8 +2,17 @@
 
 var cli = require('../lib/cli')
 
-cli()
-  .run(process.argv.slice(2))
+process.stdin.setEncoding('utf8')
+
+var io =
+  { stdin:  process.stdin
+  , stdout: process.stdout
+  , stderr: process.stderr
+  , argv:   process.argv
+  }
+
+cli(io)
+  .run()
   .then( function () {
     process.exit()
   })

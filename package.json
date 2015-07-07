@@ -28,7 +28,16 @@
   },
   "homepage": "https://github.com/eHealthAfrica/merge-docs#readme",
   "devDependencies": {
+    "proxyquire": "^1.5.0",
+    "redtape": "^1.0.0",
+    "sinon": "^1.14.1",
     "tape": "^4.0.0",
-    "tape-dots": "^1.0.0"
+    "tape-dots": "^1.0.0",
+    "timekeeper": "0.0.5"
+  },
+  "dependencies": {
+    "JSONStream": "^1.0.4",
+    "lodash": "^3.9.3",
+    "uuid": "^2.0.1"
   }
 }
